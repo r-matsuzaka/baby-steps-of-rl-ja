@@ -1,8 +1,10 @@
 from enum import Enum
+
 import numpy as np
 
 
-class State():
+class State:
+    """状態を定義するクラス"""
 
     def __init__(self, row=-1, column=-1):
         self.row = row
@@ -14,21 +16,25 @@ class State():
     def clone(self):
         return State(self.row, self.column)
 
-    def __hash__(self):
-        return hash((self.row, self.column))
+    #
+    # def __hash__(self):
+    #     return hash((self.row, self.column))
 
-    def __eq__(self, other):
-        return self.row == other.row and self.column == other.column
+    # def __eq__(self, other):
+    #     return self.row == other.row and self.column == other.column
 
 
 class Action(Enum):
+    """行動を定義するクラス"""
+
     UP = 1
     DOWN = -1
     LEFT = 2
     RIGHT = -2
 
 
-class Environment():
+class Environment:
+    """環境を定義するクラス"""
 
     def __init__(self, grid, move_prob=0.8):
         # grid is 2d-array. Its values are treated as an attribute.
@@ -52,16 +58,33 @@ class Environment():
 
     @property
     def row_length(self):
+        """
+        行数を返す関数
+
+        Returns:
+            int: 行数
+        """
         return len(self.grid)
 
     @property
     def column_length(self):
+        """
+        列数を返す関数
+
+        Returns:
+            int: 列数
+        """
         return len(self.grid[0])
 
     @property
     def actions(self):
-        return [Action.UP, Action.DOWN,
-                Action.LEFT, Action.RIGHT]
+        """
+        一連の行動を返す関数
+
+        Returns:
+            List: 行動のリスト
+        """
+        return [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]
 
     @property
     def states(self):
@@ -74,6 +97,13 @@ class Environment():
         return states
 
     def transit_func(self, state, action):
+        """遷移関数
+        Args:
+            state():
+            action():
+        Returns:
+            float: 遷移確率
+        """
         transition_probs = {}
         if not self.can_action_at(state):
             # Already on the terminal cell.
@@ -82,6 +112,7 @@ class Environment():
         opposite_direction = Action(action.value * -1)
 
         for a in self.actions:
+            print(a, action)
             prob = 0
             if a == action:
                 prob = self.move_prob
@@ -131,6 +162,12 @@ class Environment():
         return next_state
 
     def reward_func(self, state):
+        """報酬関数
+        Args:
+
+        Returns:
+
+        """
         reward = self.default_reward
         done = False
 

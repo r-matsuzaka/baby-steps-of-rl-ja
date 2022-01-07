@@ -1,20 +1,19 @@
 import os
-import tornado.web
+
 import tornado.escape
+import tornado.web
 from environment import Environment
-from planner import ValueIterationPlanner, PolicyIterationPlanner
+from planner import PolicyIterationPlanner, ValueIterationPlanner
 
 
 class IndexHandler(tornado.web.RequestHandler):
-
     def get(self):
         self.render("index.html")
 
 
 class PlanningHandler(tornado.web.RequestHandler):
-
     def post(self):
-        data = tornado.escape.json_decode(self.request.body) 
+        data = tornado.escape.json_decode(self.request.body)
         grid = data["grid"]
         plan_type = data["plan"]
         move_prob = 0.8  # default value
@@ -36,7 +35,6 @@ class PlanningHandler(tornado.web.RequestHandler):
 
 
 class Application(tornado.web.Application):
-
     def __init__(self):
         handlers = [
             (r"/", IndexHandler),
@@ -46,7 +44,9 @@ class Application(tornado.web.Application):
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
-            cookie_secret=os.environ.get("SECRET_TOKEN", "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__"),
+            cookie_secret=os.environ.get(
+                "SECRET_TOKEN", "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__"
+            ),
             debug=True,
         )
 

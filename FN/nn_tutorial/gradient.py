@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-
 tf.enable_eager_execution()
 tfe = tf.contrib.eager
 

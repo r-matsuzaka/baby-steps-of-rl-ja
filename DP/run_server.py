@@ -1,8 +1,8 @@
 import os
-import tornado.ioloop
-from tornado.options import define, options, parse_command_line
-from application import Application
 
+import tornado.ioloop
+from application import Application
+from tornado.options import define, options, parse_command_line
 
 define("port", default=8888, help="run on the given port", type=int)
 

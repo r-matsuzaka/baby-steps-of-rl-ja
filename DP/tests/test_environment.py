@@ -1,10 +1,10 @@
 import random
 import unittest
+
 from DP.environment import Environment
 
 
 class TestEnvironment(unittest.TestCase):
-
     def test_run_environment(self):
         grid = self.get_sample_grid()
         env = Environment(grid)
@@ -19,8 +19,11 @@ class TestEnvironment(unittest.TestCase):
                 self.assertTrue(0 <= state.row < len(env.grid))
                 self.assertTrue(0 <= state.column < len(env.grid[0]))
                 if done:
-                    print("Episode {}: get reward {}, {} timesteps".format(
-                        i, reward, t + 1))
+                    print(
+                        "Episode {}: get reward {}, {} timesteps".format(
+                            i, reward, t + 1
+                        )
+                    )
                     goal = True
                     break
             if not goal:
@@ -28,9 +31,5 @@ class TestEnvironment(unittest.TestCase):
 
     def get_sample_grid(self):
         # 3 x 4 grid
-        grid = [
-            [0, 0, 0, 1],
-            [0, 9, 0, -1],
-            [0, 0, 0, 0]
-            ]
+        grid = [[0, 0, 0, 1], [0, 9, 0, -1], [0, 0, 0, 0]]
         return grid

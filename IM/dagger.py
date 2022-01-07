@@ -1,17 +1,21 @@
-import os
 import argparse
+import os
 import warnings
-import numpy as np
-from sklearn.externals import joblib
-from sklearn.neural_network import MLPRegressor, MLPClassifier
+
 import gym
+import numpy as np
 from gym.envs.registration import register
-register(id="FrozenLakeEasy-v0", entry_point="gym.envs.toy_text:FrozenLakeEnv",
-         kwargs={"is_slippery": False})
+from sklearn.externals import joblib
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+
+register(
+    id="FrozenLakeEasy-v0",
+    entry_point="gym.envs.toy_text:FrozenLakeEnv",
+    kwargs={"is_slippery": False},
+)
 
 
-class TeacherAgent():
-
+class TeacherAgent:
     def __init__(self, env, epsilon=0.1):
         self.actions = list(range(env.action_space.n))
         self.epsilon = epsilon
@@ -45,8 +49,15 @@ class TeacherAgent():
             return np.argmax(self.estimate(state))
 
     @classmethod
-    def train(cls, env, episode_count=3000, gamma=0.9,
-              initial_epsilon=1.0, final_epsilon=0.1, report_interval=100):
+    def train(
+        cls,
+        env,
+        episode_count=3000,
+        gamma=0.9,
+        initial_epsilon=1.0,
+        final_epsilon=0.1,
+        report_interval=100,
+    ):
         agent = cls(env, initial_epsilon).initialize(env.reset())
         rewards = []
         decay = (initial_epsilon - final_epsilon) / episode_count
@@ -70,15 +81,13 @@ class TeacherAgent():
             rewards.append(goal_reward)
             if e != 0 and e % report_interval == 0:
                 recent = np.array(rewards[-report_interval:])
-                print("At episode {}, reward is {}".format(
-                        e, recent.mean()))
+                print("At episode {}, reward is {}".format(e, recent.mean()))
             agent.epsilon -= decay
 
         return agent
 
 
-class FrozenLakeObserver():
-
+class FrozenLakeObserver:
     def __init__(self):
         self._env = gym.make("FrozenLakeEasy-v0")
 
@@ -106,8 +115,7 @@ class FrozenLakeObserver():
         return feature
 
 
-class Student():
-
+class Student:
     def __init__(self, env):
         self.actions = list(range(env.action_space.n))
         self.model = None
@@ -115,15 +123,15 @@ class Student():
     def initialize(self, state):
         self.model = MLPClassifier(hidden_layer_sizes=(), max_iter=1)
         dummy_action = 0
-        self.model.partial_fit([state], [dummy_action],
-                               classes=self.actions)
+        self.model.partial_fit([state], [dummy_action], classes=self.actions)
         return self
 
     def policy(self, state):
         return self.model.predict([state])[0]
 
-    def imitate(self, env, teacher, initial_step=100, train_step=200,
-                report_interval=10):
+    def imitate(
+        self, env, teacher, initial_step=100, train_step=200, report_interval=10
+    ):
         states = []
         actions = []
 
@@ -162,8 +170,7 @@ class Student():
             rewards.append(goal_reward)
             if e != 0 and e % report_interval == 0:
                 recent = np.array(rewards[-report_interval:])
-                print("At episode {}, reward is {}".format(
-                        e, recent.mean()))
+                print("At episode {}, reward is {}".format(e, recent.mean()))
 
             with warnings.catch_warnings():
                 # It will be fixed in latest scikit-learn.
@@ -187,8 +194,7 @@ def main(teacher):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Imitation Learning")
-    parser.add_argument("--teacher", action="store_true",
-                        help="train teacher model")
+    parser.add_argument("--teacher", action="store_true", help="train teacher model")
 
     args = parser.parse_args()
     main(args.teacher)

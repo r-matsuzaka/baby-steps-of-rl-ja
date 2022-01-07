@@ -1,4 +1,5 @@
 from enum import Enum
+
 import numpy as np
 
 
@@ -9,8 +10,7 @@ class Direction(Enum):
     RIGHT = -2
 
 
-class State():
-
+class State:
     def __init__(self, row=-1, column=-1):
         self.row = row
         self.column = column
@@ -31,8 +31,7 @@ class State():
         return self.row == other.row and self.column == other.column
 
 
-class Environment():
-
+class Environment:
     def __init__(self, grid, move_prob=0.8):
         # Grid is 2d-array, and each value treated as attribute.
         # attribute is
@@ -62,8 +61,7 @@ class Environment():
 
     @property
     def action_space(self):
-        return [Direction.UP, Direction.DOWN,
-                Direction.LEFT, Direction.RIGHT]
+        return [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]
 
     @property
     def states(self):

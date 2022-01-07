@@ -1,16 +1,23 @@
 from collections import defaultdict
+
 import gym
 from el_agent import ELAgent
 from frozen_lake_util import show_q_value
 
 
 class SARSAAgent(ELAgent):
-
     def __init__(self, epsilon=0.1):
         super().__init__(epsilon)
 
-    def learn(self, env, episode_count=1000, gamma=0.9,
-              learning_rate=0.1, render=False, report_interval=50):
+    def learn(
+        self,
+        env,
+        episode_count=1000,
+        gamma=0.9,
+        learning_rate=0.1,
+        render=False,
+        report_interval=50,
+    ):
         self.init_log()
         actions = list(range(env.action_space.n))
         self.Q = defaultdict(lambda: [0] * len(actions))

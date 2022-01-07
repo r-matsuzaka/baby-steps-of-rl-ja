@@ -3,15 +3,15 @@ from planner import PolicyIterationPlanner
 from tqdm import tqdm
 
 
-class MaxEntIRL():
-
+class MaxEntIRL:
     def __init__(self, env):
         self.env = env
         self.planner = PolicyIterationPlanner(env)
 
     def estimate(self, trajectories, epoch=20, learning_rate=0.01, gamma=0.9):
-        state_features = np.vstack([self.env.state_to_feature(s)
-                                   for s in self.env.states])
+        state_features = np.vstack(
+            [self.env.state_to_feature(s) for s in self.env.states]
+        )
         theta = np.random.uniform(size=state_features.shape[1])
         teacher_features = self.calculate_expected_feature(trajectories)
 
@@ -25,7 +25,8 @@ class MaxEntIRL():
 
             # Estimate feature under policy.
             features = self.expected_features_under_policy(
-                                self.planner.policy, trajectories)
+                self.planner.policy, trajectories
+            )
 
             # Update to close to teacher.
             update = teacher_features - features.dot(state_features)
@@ -68,14 +69,18 @@ class MaxEntIRL():
 
 
 if __name__ == "__main__":
+
     def test_estimate():
         from environment import GridWorldEnv
-        env = GridWorldEnv(grid=[
-            [0, 0, 0, 1],
-            [0, 0, 0, 0],
-            [0, -1, 0, 0],
-            [0, 0, 0, 0],
-        ])
+
+        env = GridWorldEnv(
+            grid=[
+                [0, 0, 0, 1],
+                [0, 0, 0, 0],
+                [0, -1, 0, 0],
+                [0, 0, 0, 0],
+            ]
+        )
         # Train Teacher
         teacher = PolicyIterationPlanner(env)
         teacher.plan()

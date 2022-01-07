@@ -1,9 +1,9 @@
 import random
+
 import numpy as np
 
 
-class CoinToss():
-
+class CoinToss:
     def __init__(self, head_probs, max_episode_steps=30):
         self.head_probs = head_probs
         self.max_episode_steps = max_episode_steps
@@ -18,8 +18,10 @@ class CoinToss():
     def step(self, action):
         final = self.max_episode_steps - 1
         if self.toss_count > final:
-            raise Exception("The step count exceeded maximum. \
-                            Please reset env.")
+            raise Exception(
+                "The step count exceeded maximum. \
+                            Please reset env."
+            )
         else:
             done = True if self.toss_count == final else False
 
@@ -35,8 +37,7 @@ class CoinToss():
             return reward, done
 
 
-class EpsilonGreedyAgent():
-
+class EpsilonGreedyAgent:
     def __init__(self, epsilon):
         self.epsilon = epsilon
         self.V = []
@@ -71,8 +72,8 @@ class EpsilonGreedyAgent():
 
 
 if __name__ == "__main__":
-    import pandas as pd
     import matplotlib.pyplot as plt
+    import pandas as pd
 
     def main():
         env = CoinToss([0.1, 0.5, 0.1, 0.9, 0.1])

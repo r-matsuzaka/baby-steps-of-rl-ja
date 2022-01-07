@@ -1,21 +1,18 @@
-import os
 import io
+import os
 import re
-from collections import namedtuple
-from collections import deque
+from collections import deque, namedtuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from tensorflow.python import keras as K
 from PIL import Image
-import matplotlib.pyplot as plt
+from tensorflow.python import keras as K
+
+Experience = namedtuple("Experience", ["s", "a", "r", "n_s", "d"])
 
 
-Experience = namedtuple("Experience",
-                        ["s", "a", "r", "n_s", "d"])
-
-
-class FNAgent():
-
+class FNAgent:
     def __init__(self, epsilon, actions):
         self.epsilon = epsilon
         self.actions = actions
@@ -49,8 +46,7 @@ class FNAgent():
         else:
             estimates = self.estimate(s)
             if self.estimate_probs:
-                action = np.random.choice(self.actions,
-                                          size=1, p=estimates)[0]
+                action = np.random.choice(self.actions, size=1, p=estimates)[0]
                 return action
             else:
                 return np.argmax(estimates)
@@ -71,10 +67,10 @@ class FNAgent():
                 print("Get reward {}.".format(episode_reward))
 
 
-class Trainer():
-
-    def __init__(self, buffer_size=1024, batch_size=32,
-                 gamma=0.9, report_interval=10, log_dir=""):
+class Trainer:
+    def __init__(
+        self, buffer_size=1024, batch_size=32, gamma=0.9, report_interval=10, log_dir=""
+    ):
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.gamma = gamma
@@ -93,8 +89,15 @@ class Trainer():
         snaked = snaked.replace("_trainer", "")
         return snaked
 
-    def train_loop(self, env, agent, episode=200, initial_count=-1,
-                   render=False, observe_interval=0):
+    def train_loop(
+        self,
+        env,
+        agent,
+        episode=200,
+        initial_count=-1,
+        render=False,
+        observe_interval=0,
+    ):
         self.experiences = deque(maxlen=self.buffer_size)
         self.training = False
         self.training_count = 0
@@ -109,17 +112,21 @@ class Trainer():
             while not done:
                 if render:
                     env.render()
-                if self.training and observe_interval > 0 and\
-                   (self.training_count == 1 or
-                    self.training_count % observe_interval == 0):
+                if (
+                    self.training
+                    and observe_interval > 0
+                    and (
+                        self.training_count == 1
+                        or self.training_count % observe_interval == 0
+                    )
+                ):
                     frames.append(s)
 
                 a = agent.policy(s)
                 n_state, reward, done, info = env.step(a)
                 e = Experience(s, a, reward, n_state, done)
                 self.experiences.append(e)
-                if not self.training and \
-                   len(self.experiences) == self.buffer_size:
+                if not self.training and len(self.experiences) == self.buffer_size:
                     self.begin_train(i, agent)
                     self.training = True
 
@@ -130,15 +137,13 @@ class Trainer():
             else:
                 self.episode_end(i, step_count, agent)
 
-                if not self.training and \
-                   initial_count > 0 and i >= initial_count:
+                if not self.training and initial_count > 0 and i >= initial_count:
                     self.begin_train(i, agent)
                     self.training = True
 
                 if self.training:
                     if len(frames) > 0:
-                        self.logger.write_image(self.training_count,
-                                                frames)
+                        self.logger.write_image(self.training_count, frames)
                         frames = []
                     self.training_count += 1
 
@@ -162,8 +167,7 @@ class Trainer():
         return [self.experiences[i] for i in recent]
 
 
-class Observer():
-
+class Observer:
     def __init__(self, env):
         self._env = env
 
@@ -189,8 +193,7 @@ class Observer():
         raise NotImplementedError("You have to implement transform method.")
 
 
-class Logger():
-
+class Logger:
     def __init__(self, log_dir="", dir_name=""):
         self.log_dir = log_dir
         if not log_dir:
@@ -203,8 +206,7 @@ class Logger():
             if not os.path.exists(self.log_dir):
                 os.mkdir(self.log_dir)
 
-        self._callback = tf.compat.v1.keras.callbacks.TensorBoard(
-                            self.log_dir)
+        self._callback = tf.compat.v1.keras.callbacks.TensorBoard(self.log_dir)
 
     @property
     def writer(self):
@@ -230,7 +232,7 @@ class Logger():
         means = []
         stds = []
         for i in indices:
-            _values = values[i:(i + interval)]
+            _values = values[i : (i + interval)]
             means.append(np.mean(_values))
             stds.append(np.std(_values))
         means = np.array(means)
@@ -238,10 +240,14 @@ class Logger():
         plt.figure()
         plt.title("{} History".format(name))
         plt.grid()
-        plt.fill_between(indices, means - stds, means + stds,
-                         alpha=0.1, color="g")
-        plt.plot(indices, means, "o-", color="g",
-                 label="{} per {} episode".format(name.lower(), interval))
+        plt.fill_between(indices, means - stds, means + stds, alpha=0.1, color="g")
+        plt.plot(
+            indices,
+            means,
+            "o-",
+            color="g",
+            label="{} per {} episode".format(name.lower(), interval),
+        )
         plt.legend(loc="best")
         plt.show()
 
@@ -275,8 +281,11 @@ class Logger():
             image_string = output.getvalue()
             output.close()
             image = tf.compat.v1.Summary.Image(
-                        height=height, width=width, colorspace=channel,
-                        encoded_image_string=image_string)
+                height=height,
+                width=width,
+                colorspace=channel,
+                encoded_image_string=image_string,
+            )
             value = tf.compat.v1.Summary.Value(tag=tag, image=image)
             values.append(value)
 

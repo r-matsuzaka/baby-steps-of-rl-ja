@@ -1,7 +1,7 @@
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import numpy as np
 from gym.envs.toy_text import discrete
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 
 
 class GridWorldEnv(discrete.DiscreteEnv):
@@ -54,8 +54,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
                     for n_s in transition_probs:
                         reward = self.reward_func(n_s)
                         done = self.has_done(s)
-                        P[s][a].append([transition_probs[n_s], n_s,
-                                        reward, done])
+                        P[s][a].append([transition_probs[n_s], n_s, reward, done])
         self.P = P
         super().__init__(num_states, num_actions, P, initial_state_prob)
 
@@ -95,8 +94,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
     def transit_func(self, state, action):
         transition_probs = {}
         opposite_direction = (action + 2) % 4
-        candidates = [a for a in range(len(self._actions))
-                      if a != opposite_direction]
+        candidates = [a for a in range(len(self._actions)) if a != opposite_direction]
 
         for a in candidates:
             prob = 0
@@ -163,13 +161,17 @@ class GridWorldEnv(discrete.DiscreteEnv):
 
 
 if __name__ == "__main__":
+
     def test_grid():
-        env = GridWorldEnv(grid=[
-            [1, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-        ], move_prob=1.0)
+        env = GridWorldEnv(
+            grid=[
+                [1, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ],
+            move_prob=1.0,
+        )
         s = env.reset()
         assert s == 12, "Start position is not left down"
         s, r, d, _ = env.step(0)  # Move to left wall

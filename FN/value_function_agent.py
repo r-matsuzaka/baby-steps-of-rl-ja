@@ -1,16 +1,16 @@
-import random
 import argparse
-import numpy as np
-from sklearn.neural_network import MLPRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.externals import joblib
+import random
+
 import gym
-from fn_framework import FNAgent, Trainer, Observer
+import numpy as np
+from fn_framework import FNAgent, Observer, Trainer
+from sklearn.externals import joblib
+from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 
 class ValueFunctionAgent(FNAgent):
-
     def save(self, model_path):
         joblib.dump(self.model, model_path)
 
@@ -67,15 +67,14 @@ class ValueFunctionAgent(FNAgent):
 
 
 class CartPoleObserver(Observer):
-
     def transform(self, state):
         return np.array(state).reshape((1, -1))
 
 
 class ValueFunctionTrainer(Trainer):
-
-    def train(self, env, episode_count=220, epsilon=0.1, initial_count=-1,
-              render=False):
+    def train(
+        self, env, episode_count=220, epsilon=0.1, initial_count=-1, render=False
+    ):
         actions = list(range(env.action_space.n))
         agent = ValueFunctionAgent(epsilon, actions)
         self.train_loop(env, agent, episode_count, initial_count, render)
@@ -94,7 +93,7 @@ class ValueFunctionTrainer(Trainer):
         self.reward_log.append(sum(rewards))
 
         if self.is_event(episode, self.report_interval):
-            recent_rewards = self.reward_log[-self.report_interval:]
+            recent_rewards = self.reward_log[-self.report_interval :]
             self.logger.describe("reward", recent_rewards, episode=episode)
 
 
@@ -108,15 +107,13 @@ def main(play):
         agent.play(env)
     else:
         trained = trainer.train(env)
-        trainer.logger.plot("Rewards", trainer.reward_log,
-                            trainer.report_interval)
+        trainer.logger.plot("Rewards", trainer.reward_log, trainer.report_interval)
         trained.save(path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="VF Agent")
-    parser.add_argument("--play", action="store_true",
-                        help="play with trained model")
+    parser.add_argument("--play", action="store_true", help="play with trained model")
 
     args = parser.parse_args()
     main(args.play)

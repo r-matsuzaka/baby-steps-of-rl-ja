@@ -1,7 +1,7 @@
-import numpy as np
-from tensorflow.python import keras as K
 import gym
 import gym_ple
+import numpy as np
+from tensorflow.python import keras as K
 
 
 def welcome():
@@ -15,8 +15,9 @@ def welcome():
 
     s = env.reset()
     brain = K.Sequential()
-    brain.add(K.layers.Dense(num_action, input_shape=[np.prod(s.shape)],
-                             activation="softmax"))
+    brain.add(
+        K.layers.Dense(num_action, input_shape=[np.prod(s.shape)], activation="softmax")
+    )
 
     def policy(s):
         evaluation = brain.predict(np.array([s.flatten()]))

@@ -1,6 +1,6 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def describe(episode, name, values, interval=10, round_count=-1):
@@ -18,7 +18,7 @@ def plot_values(name, values, interval=10):
     means = []
     stds = []
     for i in indices:
-        _values = values[i:(i + interval)]
+        _values = values[i : (i + interval)]
         means.append(np.mean(_values))
         stds.append(np.std(_values))
     means = np.array(means)
@@ -26,10 +26,14 @@ def plot_values(name, values, interval=10):
     plt.figure()
     plt.title("{} History".format(name))
     plt.grid()
-    plt.fill_between(indices, means - stds, means + stds,
-                     alpha=0.1, color="g")
-    plt.plot(indices, means, "o-", color="g",
-             label="{} per {} episode".format(name.lower(), interval))
+    plt.fill_between(indices, means - stds, means + stds, alpha=0.1, color="g")
+    plt.plot(
+        indices,
+        means,
+        "o-",
+        color="g",
+        label="{} per {} episode".format(name.lower(), interval),
+    )
     plt.legend(loc="best")
     plt.show()
 
@@ -73,8 +77,13 @@ def plot_grid_rewards(env, Q):
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    plt.imshow(reward_map, cmap=cm.RdYlGn, interpolation="bilinear",
-               vmax=abs(reward_map).max(), vmin=-abs(reward_map).max())
+    plt.imshow(
+        reward_map,
+        cmap=cm.RdYlGn,
+        interpolation="bilinear",
+        vmax=abs(reward_map).max(),
+        vmin=-abs(reward_map).max(),
+    )
     ax.set_xlim(-0.5, q_ncol - 0.5)
     ax.set_ylim(-0.5, q_nrow - 0.5)
     ax.set_xticks(np.arange(-0.5, q_ncol, state_size))

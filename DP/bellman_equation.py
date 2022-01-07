@@ -51,10 +51,7 @@ def transit_func(s, a):
         return {state: prob}
     else:
         opposite = "up" if a == "down" else "down"
-        return {
-            next_state(s, a): MOVE_PROB,
-            next_state(s, opposite): 1 - MOVE_PROB
-        }
+        return {next_state(s, a): MOVE_PROB, next_state(s, opposite): 1 - MOVE_PROB}
 
 
 if __name__ == "__main__":

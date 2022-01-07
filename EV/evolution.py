@@ -1,10 +1,11 @@
-import os
 import argparse
-import numpy as np
-from sklearn.externals.joblib import Parallel, delayed
-from PIL import Image
-import matplotlib.pyplot as plt
+import os
+
 import gym
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
+from sklearn.externals.joblib import Parallel, delayed
 
 # Disable TensorFlow GPU for parallel execution
 if os.name == "nt":
@@ -16,8 +17,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from tensorflow.python import keras as K
 
 
-class EvolutionalAgent():
-
+class EvolutionalAgent:
     def __init__(self, actions):
         self.actions = actions
         self.model = None
@@ -35,10 +35,16 @@ class EvolutionalAgent():
     def initialize(self, state, weights=()):
         normal = K.initializers.glorot_normal()
         model = K.Sequential()
-        model.add(K.layers.Conv2D(
-            3, kernel_size=5, strides=3,
-            input_shape=state.shape, kernel_initializer=normal,
-            activation="relu"))
+        model.add(
+            K.layers.Conv2D(
+                3,
+                kernel_size=5,
+                strides=3,
+                input_shape=state.shape,
+                kernel_initializer=normal,
+                activation="relu",
+            )
+        )
         model.add(K.layers.Flatten())
         model.add(K.layers.Dense(len(self.actions), activation="softmax"))
         self.model = model
@@ -47,8 +53,7 @@ class EvolutionalAgent():
 
     def policy(self, state):
         action_probs = self.model.predict(np.array([state]))[0]
-        action = np.random.choice(self.actions,
-                                  size=1, p=action_probs)[0]
+        action = np.random.choice(self.actions, size=1, p=action_probs)[0]
         return action
 
     def play(self, env, episode_count=5, render=True):
@@ -67,10 +72,10 @@ class EvolutionalAgent():
                 print("Get reward {}".format(episode_reward))
 
 
-class CatcherObserver():
-
+class CatcherObserver:
     def __init__(self, width, height, frame_count):
         import gym_ple
+
         self._env = gym.make("Catcher-v0")
         self.width = width
         self.height = height
@@ -102,10 +107,10 @@ class CatcherObserver():
         return normalized
 
 
-class EvolutionalTrainer():
-
-    def __init__(self, population_size=20, sigma=0.5, learning_rate=0.1,
-                 report_interval=10):
+class EvolutionalTrainer:
+    def __init__(
+        self, population_size=20, sigma=0.5, learning_rate=0.1, report_interval=10
+    ):
         self.population_size = population_size
         self.sigma = sigma
         self.learning_rate = learning_rate
@@ -123,9 +128,10 @@ class EvolutionalTrainer():
         with Parallel(n_jobs=-1) as parallel:
             for e in range(epoch):
                 experiment = delayed(EvolutionalTrainer.run_agent)
-                results = parallel(experiment(
-                                episode_per_agent, self.weights, self.sigma)
-                                for p in range(self.population_size))
+                results = parallel(
+                    experiment(episode_per_agent, self.weights, self.sigma)
+                    for p in range(self.population_size)
+                )
                 self.update(results)
                 self.log()
 
@@ -137,8 +143,7 @@ class EvolutionalTrainer():
         return CatcherObserver(width=50, height=50, frame_count=5)
 
     @classmethod
-    def run_agent(cls, episode_per_agent, base_weights, sigma,
-                  max_step=1000):
+    def run_agent(cls, episode_per_agent, base_weights, sigma, max_step=1000):
         env = cls.make_env()
         actions = list(range(env.action_space.n))
         agent = EvolutionalAgent(actions)
@@ -188,9 +193,11 @@ class EvolutionalTrainer():
 
     def log(self):
         rewards = self.reward_log[-1]
-        print("Epoch {}: reward {:.3}(max:{}, min:{})".format(
-            len(self.reward_log), rewards.mean(),
-            rewards.max(), rewards.min()))
+        print(
+            "Epoch {}: reward {:.3}(max:{}, min:{})".format(
+                len(self.reward_log), rewards.mean(), rewards.max(), rewards.min()
+            )
+        )
 
     def plot_rewards(self):
         indices = range(len(self.reward_log))
@@ -199,10 +206,8 @@ class EvolutionalTrainer():
         plt.figure()
         plt.title("Reward History")
         plt.grid()
-        plt.fill_between(indices, means - stds, means + stds,
-                         alpha=0.1, color="g")
-        plt.plot(indices, means, "o-", color="g",
-                 label="reward")
+        plt.fill_between(indices, means - stds, means + stds, alpha=0.1, color="g")
+        plt.plot(indices, means, "o-", color="g", label="reward")
         plt.legend(loc="best")
         plt.show()
 
@@ -223,8 +228,7 @@ def main(play):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evolutional Agent")
-    parser.add_argument("--play", action="store_true",
-                        help="play with trained model")
+    parser.add_argument("--play", action="store_true", help="play with trained model")
 
     args = parser.parse_args()
     main(args.play)

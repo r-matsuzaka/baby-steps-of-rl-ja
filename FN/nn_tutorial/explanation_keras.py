@@ -1,9 +1,11 @@
 import numpy as np
 from tensorflow.python import keras as K
 
-model = K.Sequential([
-    K.layers.Dense(units=4, input_shape=((2, ))),
-])
+model = K.Sequential(
+    [
+        K.layers.Dense(units=4, input_shape=((2,))),
+    ]
+)
 
 weight, bias = model.layers[0].get_weights()
 print("Weight shape is {}.".format(weight.shape))

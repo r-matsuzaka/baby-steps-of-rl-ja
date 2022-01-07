@@ -1,18 +1,25 @@
-from multiprocessing import Pool
 from collections import defaultdict
+from multiprocessing import Pool
+
 import gym
 from el_agent import ELAgent
 from frozen_lake_util import show_q_value
 
 
 class CompareAgent(ELAgent):
-
     def __init__(self, q_learning=True, epsilon=0.33):
         self.q_learning = q_learning
         super().__init__(epsilon)
 
-    def learn(self, env, episode_count=1000, gamma=0.9,
-              learning_rate=0.1, render=False, report_interval=50):
+    def learn(
+        self,
+        env,
+        episode_count=1000,
+        gamma=0.9,
+        learning_rate=0.1,
+        render=False,
+        report_interval=50,
+    ):
         self.init_log()
         self.Q = defaultdict(lambda: [0] * len(actions))
         actions = list(range(env.action_space.n))

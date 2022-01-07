@@ -1,18 +1,19 @@
 import argparse
 from collections import deque
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
-from tensorflow.python import keras as K
-from PIL import Image
+
 import gym
 import gym_ple
-from fn_framework import FNAgent, Trainer, Observer
+import numpy as np
+import tensorflow as tf
+from fn_framework import FNAgent, Observer, Trainer
+from PIL import Image
+from sklearn.preprocessing import StandardScaler
+from tensorflow.python import keras as K
+
 tf.compat.v1.disable_eager_execution()
 
 
 class ActorCriticAgent(FNAgent):
-
     def __init__(self, actions):
         # ActorCriticAgent uses self policy (doesn't use epsilon).
         super().__init__(epsilon=0.0, actions=actions)
@@ -22,8 +23,9 @@ class ActorCriticAgent(FNAgent):
     def load(cls, env, model_path):
         actions = list(range(env.action_space.n))
         agent = cls(actions)
-        agent.model = K.models.load_model(model_path, custom_objects={
-                        "SampleLayer": SampleLayer})
+        agent.model = K.models.load_model(
+            model_path, custom_objects={"SampleLayer": SampleLayer}
+        )
         agent.initialized = True
         return agent
 
@@ -37,40 +39,60 @@ class ActorCriticAgent(FNAgent):
     def make_model(self, feature_shape):
         normal = K.initializers.glorot_normal()
         model = K.Sequential()
-        model.add(K.layers.Conv2D(
-            32, kernel_size=8, strides=4, padding="same",
-            input_shape=feature_shape,
-            kernel_initializer=normal, activation="relu"))
-        model.add(K.layers.Conv2D(
-            64, kernel_size=4, strides=2, padding="same",
-            kernel_initializer=normal, activation="relu"))
-        model.add(K.layers.Conv2D(
-            64, kernel_size=3, strides=1, padding="same",
-            kernel_initializer=normal, activation="relu"))
+        model.add(
+            K.layers.Conv2D(
+                32,
+                kernel_size=8,
+                strides=4,
+                padding="same",
+                input_shape=feature_shape,
+                kernel_initializer=normal,
+                activation="relu",
+            )
+        )
+        model.add(
+            K.layers.Conv2D(
+                64,
+                kernel_size=4,
+                strides=2,
+                padding="same",
+                kernel_initializer=normal,
+                activation="relu",
+            )
+        )
+        model.add(
+            K.layers.Conv2D(
+                64,
+                kernel_size=3,
+                strides=1,
+                padding="same",
+                kernel_initializer=normal,
+                activation="relu",
+            )
+        )
         model.add(K.layers.Flatten())
-        model.add(K.layers.Dense(256, kernel_initializer=normal,
-                                 activation="relu"))
+        model.add(K.layers.Dense(256, kernel_initializer=normal, activation="relu"))
 
-        actor_layer = K.layers.Dense(len(self.actions),
-                                     kernel_initializer=normal)
+        actor_layer = K.layers.Dense(len(self.actions), kernel_initializer=normal)
         action_evals = actor_layer(model.output)
         actions = SampleLayer()(action_evals)
 
         critic_layer = K.layers.Dense(1, kernel_initializer=normal)
         values = critic_layer(model.output)
 
-        self.model = K.Model(inputs=model.input,
-                             outputs=[actions, action_evals, values])
+        self.model = K.Model(
+            inputs=model.input, outputs=[actions, action_evals, values]
+        )
 
-    def set_updater(self, optimizer,
-                    value_loss_weight=1.0, entropy_weight=0.1):
+    def set_updater(self, optimizer, value_loss_weight=1.0, entropy_weight=0.1):
         actions = tf.compat.v1.placeholder(shape=(None), dtype="int32")
         values = tf.compat.v1.placeholder(shape=(None), dtype="float32")
 
         _, action_evals, estimateds = self.model.output
 
         neg_logs = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                        logits=action_evals, labels=actions)
+            logits=action_evals, labels=actions
+        )
         # tf.stop_gradient: Prevent policy_loss influences critic_layer.
         advantages = values - tf.stop_gradient(estimateds)
 
@@ -81,19 +103,20 @@ class ActorCriticAgent(FNAgent):
         loss = policy_loss + value_loss_weight * value_loss
         loss -= entropy_weight * action_entropy
 
-        updates = optimizer.get_updates(loss=loss,
-                                        params=self.model.trainable_weights)
+        updates = optimizer.get_updates(loss=loss, params=self.model.trainable_weights)
 
         self._updater = K.backend.function(
-                                        inputs=[self.model.input,
-                                                actions, values],
-                                        outputs=[loss,
-                                                 policy_loss,
-                                                 value_loss,
-                                                 tf.reduce_mean(neg_logs),
-                                                 tf.reduce_mean(advantages),
-                                                 action_entropy],
-                                        updates=updates)
+            inputs=[self.model.input, actions, values],
+            outputs=[
+                loss,
+                policy_loss,
+                value_loss,
+                tf.reduce_mean(neg_logs),
+                tf.reduce_mean(advantages),
+                action_entropy,
+            ],
+            updates=updates,
+        )
 
     def categorical_entropy(self, logits):
         """
@@ -122,7 +145,6 @@ class ActorCriticAgent(FNAgent):
 
 
 class SampleLayer(K.layers.Layer):
-
     def __init__(self, **kwargs):
         self.output_dim = 1  # sample one action from evaluations
         super(SampleLayer, self).__init__(**kwargs)
@@ -139,17 +161,20 @@ class SampleLayer(K.layers.Layer):
 
 
 class ActorCriticAgentTest(ActorCriticAgent):
-
     def make_model(self, feature_shape):
         normal = K.initializers.glorot_normal()
         model = K.Sequential()
-        model.add(K.layers.Dense(10, input_shape=feature_shape,
-                                 kernel_initializer=normal, activation="relu"))
-        model.add(K.layers.Dense(10, kernel_initializer=normal,
-                                 activation="relu"))
+        model.add(
+            K.layers.Dense(
+                10,
+                input_shape=feature_shape,
+                kernel_initializer=normal,
+                activation="relu",
+            )
+        )
+        model.add(K.layers.Dense(10, kernel_initializer=normal, activation="relu"))
 
-        actor_layer = K.layers.Dense(len(self.actions),
-                                     kernel_initializer=normal)
+        actor_layer = K.layers.Dense(len(self.actions), kernel_initializer=normal)
 
         action_evals = actor_layer(model.output)
         actions = SampleLayer()(action_evals)
@@ -157,12 +182,12 @@ class ActorCriticAgentTest(ActorCriticAgent):
         critic_layer = K.layers.Dense(1, kernel_initializer=normal)
         values = critic_layer(model.output)
 
-        self.model = K.Model(inputs=model.input,
-                             outputs=[actions, action_evals, values])
+        self.model = K.Model(
+            inputs=model.input, outputs=[actions, action_evals, values]
+        )
 
 
 class CatcherObserver(Observer):
-
     def __init__(self, env, width, height, frame_count):
         super().__init__(env)
         self.width = width
@@ -187,20 +212,32 @@ class CatcherObserver(Observer):
 
 
 class ActorCriticTrainer(Trainer):
-
-    def __init__(self, buffer_size=256, batch_size=32,
-                 gamma=0.99, learning_rate=1e-3,
-                 report_interval=10, log_dir="", file_name=""):
-        super().__init__(buffer_size, batch_size, gamma,
-                         report_interval, log_dir)
+    def __init__(
+        self,
+        buffer_size=256,
+        batch_size=32,
+        gamma=0.99,
+        learning_rate=1e-3,
+        report_interval=10,
+        log_dir="",
+        file_name="",
+    ):
+        super().__init__(buffer_size, batch_size, gamma, report_interval, log_dir)
         self.file_name = file_name if file_name else "a2c_agent.h5"
         self.learning_rate = learning_rate
         self.losses = {}
         self.rewards = []
         self._max_reward = -10
 
-    def train(self, env, episode_count=900, initial_count=10,
-              test_mode=False, render=False, observe_interval=100):
+    def train(
+        self,
+        env,
+        episode_count=900,
+        initial_count=10,
+        test_mode=False,
+        render=False,
+        observe_interval=100,
+    ):
         actions = list(range(env.action_space.n))
         if not test_mode:
             agent = ActorCriticAgent(actions)
@@ -209,8 +246,9 @@ class ActorCriticTrainer(Trainer):
             observe_interval = 0
         self.training_episode = episode_count
 
-        self.train_loop(env, agent, episode_count, initial_count, render,
-                        observe_interval)
+        self.train_loop(
+            env, agent, episode_count, initial_count, render, observe_interval
+        )
         return agent
 
     def episode_begin(self, episode, agent):
@@ -223,8 +261,7 @@ class ActorCriticTrainer(Trainer):
                 # Store experience until buffer_size (enough to initialize).
                 return False
 
-            optimizer = K.optimizers.Adam(lr=self.learning_rate,
-                                          clipnorm=5.0)
+            optimizer = K.optimizers.Adam(lr=self.learning_rate, clipnorm=5.0)
             agent.initialize(self.experiences, optimizer)
             self.logger.set_model(agent.model)
             self.training = True
@@ -276,8 +313,7 @@ class ActorCriticTrainer(Trainer):
 
         if agent.initialized:
             self.logger.write(self.training_count, "reward", reward)
-            self.logger.write(self.training_count, "reward_max",
-                              max(self.rewards))
+            self.logger.write(self.training_count, "reward_max", max(self.rewards))
 
             for k in self.losses:
                 self.logger.write(self.training_count, k, self.losses[k])
@@ -287,7 +323,7 @@ class ActorCriticTrainer(Trainer):
                 self._max_reward = reward
 
         if self.is_event(episode, self.report_interval):
-            recent_rewards = self.reward_log[-self.report_interval:]
+            recent_rewards = self.reward_log[-self.report_interval :]
             self.logger.describe("reward", recent_rewards, episode=episode)
 
 
@@ -315,10 +351,8 @@ def main(play, is_test):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A2C Agent")
-    parser.add_argument("--play", action="store_true",
-                        help="play with trained model")
-    parser.add_argument("--test", action="store_true",
-                        help="train by test mode")
+    parser.add_argument("--play", action="store_true", help="play with trained model")
+    parser.add_argument("--test", action="store_true", help="train by test mode")
 
     args = parser.parse_args()
     main(args.play, args.test)

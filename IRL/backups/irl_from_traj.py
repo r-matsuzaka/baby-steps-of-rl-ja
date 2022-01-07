@@ -1,23 +1,27 @@
-import os
 import argparse
-import numpy as np
+import os
 from collections import defaultdict
-from sklearn.externals import joblib
-from sklearn.neural_network import MLPRegressor
+
+import gym
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.eager as tfe
-from tensorflow.python import keras as K
-import gym
 from gym.envs.registration import register
-register(id="FrozenLakeEasy-v0", entry_point="gym.envs.toy_text:FrozenLakeEnv",
-         kwargs={"is_slippery": False})
+from sklearn.externals import joblib
+from sklearn.neural_network import MLPRegressor
+from tensorflow.python import keras as K
+
+register(
+    id="FrozenLakeEasy-v0",
+    entry_point="gym.envs.toy_text:FrozenLakeEnv",
+    kwargs={"is_slippery": False},
+)
 
 
 tfe.enable_eager_execution()
 
 
-class TeacherAgent():
-
+class TeacherAgent:
     def __init__(self, env, epsilon=0.1):
         self.actions = list(range(env.action_space.n))
         self.num_states = env.observation_space.n
@@ -38,8 +42,7 @@ class TeacherAgent():
         self.model = MLPRegressor(hidden_layer_sizes=(), max_iter=1)
         # Warmup to use predict method
         dummy_label = [np.random.uniform(size=len(self.actions))]
-        self.model.partial_fit(np.array([self.transform(state)]),
-                               np.array(dummy_label))
+        self.model.partial_fit(np.array([self.transform(state)]), np.array(dummy_label))
         return self
 
     def estimate(self, state):
@@ -59,8 +62,15 @@ class TeacherAgent():
         return feature
 
     @classmethod
-    def train(cls, env, episode_count=3000, gamma=0.9,
-              initial_epsilon=1.0, final_epsilon=0.1, report_interval=100):
+    def train(
+        cls,
+        env,
+        episode_count=3000,
+        gamma=0.9,
+        initial_epsilon=1.0,
+        final_epsilon=0.1,
+        report_interval=100,
+    ):
         agent = cls(env, initial_epsilon).initialize(env.reset())
         rewards = []
         decay = (initial_epsilon - final_epsilon) / episode_count
@@ -84,21 +94,19 @@ class TeacherAgent():
             rewards.append(goal_reward)
             if e != 0 and e % report_interval == 0:
                 recent = np.array(rewards[-report_interval:])
-                print("At episode {}, reward is {}".format(
-                        e, recent.mean()))
+                print("At episode {}, reward is {}".format(e, recent.mean()))
             agent.epsilon -= decay
 
         return agent
 
 
-class IRL():
-
+class IRL:
     def __init__(self, env):
         self.actions = list(range(env.action_space.n))
         self.num_states = env.observation_space.n
-        self.rewards = tfe.Variable(tf.random_uniform(
-                                        [env.observation_space.n]),
-                                    name="rewards")
+        self.rewards = tfe.Variable(
+            tf.random_uniform([env.observation_space.n]), name="rewards"
+        )
         """
         self.rewards = tfe.Variable(initial_value=[0.0, 0.0, 0.0, 0.0,
                                                    0.0, 0.0, 0.0, 0.0,
@@ -145,8 +153,9 @@ class IRL():
         one_host_trajectory = tf.one_hot(trajectory, self.num_states)
         rewards = tf.reduce_sum(one_host_trajectory * self.rewards, axis=1)
         for i, r in enumerate(rewards):
-            future = [_r * (gamma ** (k + 1))
-                      for k, _r in enumerate(rewards[(i + 1):])]
+            future = [
+                _r * (gamma ** (k + 1)) for k, _r in enumerate(rewards[(i + 1) :])
+            ]
             reward = r + tf.reduce_sum(future)
             s = trajectory[i]
             values[s] = reward
@@ -165,19 +174,21 @@ class IRL():
         return self.rewards.numpy()
 
     def loss(self, teacher_steps, steps, gamma):
-        teacher_values = tf.stack([self.value_estimate(t, gamma) for t in teacher_steps])
+        teacher_values = tf.stack(
+            [self.value_estimate(t, gamma) for t in teacher_steps]
+        )
         values = tf.stack([self.value_estimate(t, gamma) for t in steps])
         best = tf.reduce_mean(teacher_values, axis=0)
         diff = tf.reduce_min(best - values, axis=0)
-        #print(">>>>>>>>")
-        #print(tf.reshape(best, (4, 4)))
-        #print(tf.reshape(tf.reduce_mean(values, axis=0), (4, 4)))
+        # print(">>>>>>>>")
+        # print(tf.reshape(best, (4, 4)))
+        # print(tf.reshape(tf.reduce_mean(values, axis=0), (4, 4)))
 
         loss = tf.reduce_sum(tf.boolean_mask(diff, diff > 0))
         penalty = -2 * tf.reduce_sum(tf.boolean_mask(diff, diff < 0))
         loss += penalty
 
-        #_loss = _loss + 1.5 * tf.reduce_sum(tf.abs(self.rewards))
+        # _loss = _loss + 1.5 * tf.reduce_sum(tf.abs(self.rewards))
         return loss
 
     def update(self, optimizer, teacher_steps, steps, gamma):
@@ -194,10 +205,18 @@ class IRL():
         else:
             return rand_action
 
-    def estimate(self, env, teacher, episode_count=3000,
-                 teacher_demo_size=256, batch_size=32,
-                 learning_rate=1e-3, max_step=10,
-                 gamma=0.9, report_interval=10):
+    def estimate(
+        self,
+        env,
+        teacher,
+        episode_count=3000,
+        teacher_demo_size=256,
+        batch_size=32,
+        learning_rate=1e-3,
+        max_step=10,
+        gamma=0.9,
+        report_interval=10,
+    ):
 
         # Accumulate teacher's demonstration
         demos = []
@@ -243,14 +262,12 @@ class IRL():
                 batch.append(trajectory)
 
             teacher_batch = np.random.choice(demos, size=batch_size)
-            loss, new_rewards = self.update(optimizer,
-                                            teacher_batch, batch, gamma)
+            loss, new_rewards = self.update(optimizer, teacher_batch, batch, gamma)
 
             rewards = new_rewards
 
             if e % 10 == 0:
-                print("At episode {}, reward={}, loss={}".format(
-                        e, total_reward, loss))
+                print("At episode {}, reward={}, loss={}".format(e, total_reward, loss))
                 print("Reward")
                 print(new_rewards.reshape(4, 4))
 
@@ -270,8 +287,7 @@ def main(train):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Imitation Learning")
-    parser.add_argument("--train", action="store_true",
-                        help="train teacher model")
+    parser.add_argument("--train", action="store_true", help="train teacher model")
 
     args = parser.parse_args()
     main(args.train)

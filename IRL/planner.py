@@ -1,8 +1,7 @@
 import numpy as np
 
 
-class Planner():
-
+class Planner:
     def __init__(self, env, reward_func=None):
         self.env = env
         self.reward_func = reward_func
@@ -33,7 +32,6 @@ class Planner():
 
 
 class ValueIterationPlanner(Planner):
-
     def __init__(self, env):
         super().__init__(env)
 
@@ -63,7 +61,6 @@ class ValueIterationPlanner(Planner):
 
 
 class PolicyIterationPlanner(Planner):
-
     def __init__(self, env):
         super().__init__(env)
         self.policy = None
@@ -71,14 +68,12 @@ class PolicyIterationPlanner(Planner):
 
     def initialize(self):
         super().initialize()
-        self.policy = np.ones((self.env.observation_space.n,
-                               self.env.action_space.n))
+        self.policy = np.ones((self.env.observation_space.n, self.env.action_space.n))
         # First, take each action uniformly.
         self.policy = self.policy / self.env.action_space.n
 
     def policy_to_q(self, V, gamma):
-        Q = np.zeros((self.env.observation_space.n,
-                      self.env.action_space.n))
+        Q = np.zeros((self.env.observation_space.n, self.env.action_space.n))
 
         for s in self.env.states:
             for a in self.env.actions:
@@ -105,8 +100,7 @@ class PolicyIterationPlanner(Planner):
                         if n_s is None:
                             reward = r
                             continue
-                        reward += action_prob * p * \
-                                  (r + gamma * V[n_s] * (not done))
+                        reward += action_prob * p * (r + gamma * V[n_s] * (not done))
                     expected_rewards.append(reward)
                 value = sum(expected_rewards)
                 delta = max(delta, abs(value - V[s]))
@@ -162,14 +156,18 @@ class PolicyIterationPlanner(Planner):
 
 
 if __name__ == "__main__":
+
     def test_plan():
         from environment import GridWorldEnv
-        env = GridWorldEnv(grid=[
-            [0, 0, 0, 1],
-            [0, 0, 0, 0],
-            [0, -1, 0, 0],
-            [0, 0, 0, 0],
-        ])
+
+        env = GridWorldEnv(
+            grid=[
+                [0, 0, 0, 1],
+                [0, 0, 0, 0],
+                [0, -1, 0, 0],
+                [0, 0, 0, 0],
+            ]
+        )
         print("Value Iteration.")
         vp = ValueIterationPlanner(env)
         v = vp.plan()

@@ -1,14 +1,14 @@
 import os
+
 import numpy as np
-from tensorflow.python import keras as K
 import tensorflow as tf
+import visualizer as viz
 from environment import Environment
 from planner import PolicyIterationPlanner
-import visualizer as viz
+from tensorflow.python import keras as K
 
 
-class LinerIRL():
-
+class LinerIRL:
     def __init__(self):
         self._updater = None
         self.rewards = None
@@ -16,19 +16,18 @@ class LinerIRL():
     def initialize(self, num_states, num_actions, optimizer, C=1.0, r_max=2):
         # Variables
         best_trans_probs = tf.compat.v1.placeholder(
-                                          tf.float32,
-                                          shape=(num_states, num_states))
+            tf.float32, shape=(num_states, num_states)
+        )
         other_trans_probss = tf.compat.v1.placeholder(
-                                            tf.float32,
-                                            shape=(num_states,
-                                                   num_actions - 1,
-                                                   num_states))
+            tf.float32, shape=(num_states, num_actions - 1, num_states)
+        )
         gamma = tf.compat.v1.placeholder(tf.float32, shape=())
-        rewards = tf.Variable(tf.random_normal([num_states], mean=r_max/2),
-                              name="rewards")
+        rewards = tf.Variable(
+            tf.random_normal([num_states], mean=r_max / 2), name="rewards"
+        )
 
         _indices = tf.constant([0] * num_states)
-        _min_losses = tf.constant([1e+10] * num_states)
+        _min_losses = tf.constant([1e10] * num_states)
         eye = tf.eye(num_states)
 
         condition = lambda s, i, loss: tf.less(i, other_trans_probss.shape[1])  # noqa
@@ -53,8 +52,9 @@ class LinerIRL():
 
         total_loss = tf.constant(0.0)
         for s in range(num_states):
-            _, _, min_loss = tf.while_loop(condition, process,
-                                           [s, _indices[s], _min_losses[s]])
+            _, _, min_loss = tf.while_loop(
+                condition, process, [s, _indices[s], _min_losses[s]]
+            )
             total_loss = tf.add(total_loss, min_loss)
 
         total_loss -= C * tf.reduce_sum(tf.abs(rewards))  # L1 regularization
@@ -63,11 +63,10 @@ class LinerIRL():
         # Get gradients
         updates = optimizer.get_updates(loss=total_loss, params=[rewards])
         self._updater = K.backend.function(
-                                        inputs=[best_trans_probs,
-                                                other_trans_probss,
-                                                gamma],
-                                        outputs=[total_loss, rewards],
-                                        updates=updates)
+            inputs=[best_trans_probs, other_trans_probss, gamma],
+            outputs=[total_loss, rewards],
+            updates=updates,
+        )
 
     def to_trans_prob(self, env, probs):
         states = env.states
@@ -77,8 +76,15 @@ class LinerIRL():
                 mx[s.index(env.row_length)] = probs[s]
         return mx
 
-    def estimate(self, env, teacher, episode_count=6000, learning_rate=1e-3,
-                 gamma=0.9, report_interval=100):
+    def estimate(
+        self,
+        env,
+        teacher,
+        episode_count=6000,
+        learning_rate=1e-3,
+        gamma=0.9,
+        report_interval=100,
+    ):
         optimizer = K.optimizers.Adam(learning_rate)
         num_actions = len(env.action_space)
         num_states = len(env.states)
@@ -99,9 +105,7 @@ class LinerIRL():
                     if a == best_action:
                         best_trans_prob = self.to_trans_prob(env, probs)
                     else:
-                        other_trans_probs.append(
-                            self.to_trans_prob(env, probs)
-                        )
+                        other_trans_probs.append(self.to_trans_prob(env, probs))
                 if len(other_trans_probs) == 0:
                     other_trans_probs = [np.zeros(num_states)] * (num_actions - 1)
 
@@ -113,9 +117,9 @@ class LinerIRL():
             best_trans_probs = np.array(best_trans_probs)
             other_trans_probss = np.array(other_trans_probss)
 
-            loss, self.rewards = self._updater([best_trans_probs,
-                                                other_trans_probss,
-                                                gamma])
+            loss, self.rewards = self._updater(
+                [best_trans_probs, other_trans_probss, gamma]
+            )
             loss_history.append(loss)
             if e != 0 and e % report_interval == 0:
                 viz.describe(e, "loss", loss_history, report_interval)
@@ -124,12 +128,7 @@ class LinerIRL():
 
 
 def main():
-    grid = [
-        [0, 0, 0, 1],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [0, 0, 0, 0]
-    ]
+    grid = [[0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
     # Prepare Teacher
     env = Environment(grid)
     planner = PolicyIterationPlanner(env)
@@ -143,8 +142,9 @@ def main():
     # Plot Reward Map
     ncol = env.column_length
     nrow = env.row_length
-    import matplotlib.pyplot as plt
     import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+
     fig, ax = plt.subplots()
     reward_map = irl.rewards.reshape((nrow, ncol))
     ax.imshow(reward_map, cmap=cm.RdYlGn)

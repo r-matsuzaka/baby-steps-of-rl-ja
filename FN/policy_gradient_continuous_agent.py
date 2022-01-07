@@ -1,17 +1,17 @@
-import os
 import argparse
+import os
 import random
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.externals import joblib
-import tensorflow as tf
-from tensorflow.python import keras as K
+
 import gym
-from fn_framework import FNAgent, Trainer, Observer
+import numpy as np
+import tensorflow as tf
+from fn_framework import FNAgent, Observer, Trainer
+from sklearn.externals import joblib
+from sklearn.preprocessing import StandardScaler
+from tensorflow.python import keras as K
 
 
 class PolicyGradientContinuousAgent(FNAgent):
-
     def __init__(self, epsilon, low, high):
         super().__init__(epsilon, [low, high])
         self.scaler = None
@@ -25,8 +25,9 @@ class PolicyGradientContinuousAgent(FNAgent):
     def load(cls, env, model_path, epsilon=0.0001):
         low, high = [env.action_space.low[0], env.action_space.high[0]]
         agent = cls(epsilon, low, high)
-        agent.model = K.models.load_model(model_path, custom_objects={
-                        "SampleLayer": SampleLayer})
+        agent.model = K.models.load_model(
+            model_path, custom_objects={"SampleLayer": SampleLayer}
+        )
         agent.scaler = joblib.load(agent.scaler_path(model_path))
         return agent
 
@@ -42,8 +43,7 @@ class PolicyGradientContinuousAgent(FNAgent):
         feature_size = states.shape[1]
 
         base = K.models.Sequential()
-        base.add(K.layers.Dense(16, activation="relu",
-                                input_shape=(feature_size,)))
+        base.add(K.layers.Dense(16, activation="relu", input_shape=(feature_size,)))
         base.add(K.layers.Dense(16, activation="relu"))
         base.add(K.layers.Dense(16, activation="relu"))
 
@@ -51,8 +51,8 @@ class PolicyGradientContinuousAgent(FNAgent):
         #  define action distribution
         mu = K.layers.Dense(1, activation="tanh")(base.output)
         mu = K.layers.Lambda(lambda m: m * 2)(mu)
-        #sigma = K.layers.Dense(1, activation="softplus")(base.output)
-        #self.dist_model = K.Model(inputs=base.input, outputs=[mu, sigma])
+        # sigma = K.layers.Dense(1, activation="softplus")(base.output)
+        # self.dist_model = K.Model(inputs=base.input, outputs=[mu, sigma])
         self.dist_model = K.Model(inputs=base.input, outputs=[mu])
 
         #  sample action from distribution
@@ -61,12 +61,14 @@ class PolicyGradientContinuousAgent(FNAgent):
         self.model = K.Model(inputs=base.input, outputs=[action])
 
         # Critic
-        self.critic = K.models.Sequential([
-            K.layers.Dense(32, activation="relu", input_shape=(feature_size + 1,)),
-            K.layers.Dense(32, activation="relu"),
-            K.layers.Dense(32, activation="relu"),
-            K.layers.Dense(1, activation="linear")
-        ])
+        self.critic = K.models.Sequential(
+            [
+                K.layers.Dense(32, activation="relu", input_shape=(feature_size + 1,)),
+                K.layers.Dense(32, activation="relu"),
+                K.layers.Dense(32, activation="relu"),
+                K.layers.Dense(1, activation="linear"),
+            ]
+        )
         self.set_updater(actor_optimizer)
         self.critic.compile(loss="mse", optimizer=critic_optimizer)
         self.initialized = True
@@ -78,20 +80,18 @@ class PolicyGradientContinuousAgent(FNAgent):
 
         # Actor loss
         mu = self.dist_model.output
-        action_dist = tf.distributions.Normal(loc=tf.squeeze(mu),
-                                              scale=0.1)
+        action_dist = tf.distributions.Normal(loc=tf.squeeze(mu), scale=0.1)
         action_probs = action_dist.prob(tf.squeeze(actions))
         clipped = tf.clip_by_value(action_probs, 1e-10, 1.0)
-        loss = - tf.math.log(clipped) * td_error
+        loss = -tf.math.log(clipped) * td_error
         loss = tf.reduce_mean(loss)
 
-        updates = optimizer.get_updates(loss=loss,
-                                        params=self.model.trainable_weights)
+        updates = optimizer.get_updates(loss=loss, params=self.model.trainable_weights)
         self._updater = K.backend.function(
-                                        inputs=[self.model.input,
-                                                actions, td_error],
-                                        outputs=[loss, action_probs, mu],
-                                        updates=updates)
+            inputs=[self.model.input, actions, td_error],
+            outputs=[loss, action_probs, mu],
+            updates=updates,
+        )
 
     def policy(self, s):
         if np.random.random() < self.epsilon or not self.initialized:
@@ -113,8 +113,10 @@ class PolicyGradientContinuousAgent(FNAgent):
         n_s_actions = self.model.predict(normalized_n_s)
         feature_n = np.concatenate([normalized_n_s, n_s_actions], axis=1)
         n_s_values = self.critic.predict(feature_n)
-        values = [b.r + gamma * (0 if b.d else 1) * n_s_values
-                  for b, n_s_values in zip(batch, n_s_values)]
+        values = [
+            b.r + gamma * (0 if b.d else 1) * n_s_values
+            for b, n_s_values in zip(batch, n_s_values)
+        ]
         values = np.array(values)
 
         feature = np.concatenate([normalized_s, actions], axis=1)
@@ -130,7 +132,6 @@ class PolicyGradientContinuousAgent(FNAgent):
 
 
 class SampleLayer(K.layers.Layer):
-
     def __init__(self, low, high, **kwargs):
         self.low = low
         self.high = high
@@ -141,8 +142,7 @@ class SampleLayer(K.layers.Layer):
 
     def call(self, x):
         mu = x
-        actions = tf.distributions.Normal(loc=tf.squeeze(mu),
-                                          scale=0.1).sample([1])
+        actions = tf.distributions.Normal(loc=tf.squeeze(mu), scale=0.1).sample([1])
         actions = tf.clip_by_value(actions, self.low, self.high)
         return tf.reshape(actions, (-1, 1))
 
@@ -157,7 +157,6 @@ class SampleLayer(K.layers.Layer):
 
 
 class PendulumObserver(Observer):
-
     def step(self, action):
         n_state, reward, done, info = self._env.step([action])
         return self.transform(n_state), reward, done, info
@@ -167,14 +166,19 @@ class PendulumObserver(Observer):
 
 
 class PolicyGradientContinuousTrainer(Trainer):
+    def __init__(
+        self,
+        buffer_size=100000,
+        batch_size=32,
+        gamma=0.99,
+        report_interval=10,
+        log_dir="",
+    ):
+        super().__init__(buffer_size, batch_size, gamma, report_interval, log_dir)
 
-    def __init__(self, buffer_size=100000, batch_size=32,
-                 gamma=0.99, report_interval=10, log_dir=""):
-        super().__init__(buffer_size, batch_size, gamma,
-                         report_interval, log_dir)
-
-    def train(self, env, episode_count=220, epsilon=1.0, initial_count=-1,
-              render=False):
+    def train(
+        self, env, episode_count=220, epsilon=1.0, initial_count=-1, render=False
+    ):
         low, high = [env.action_space.low[0], env.action_space.high[0]]
         agent = PolicyGradientContinuousAgent(epsilon, low, high)
 
@@ -197,7 +201,7 @@ class PolicyGradientContinuousTrainer(Trainer):
         self.reward_log.append(reward)
 
         if self.is_event(episode, self.report_interval):
-            recent_rewards = self.reward_log[-self.report_interval:]
+            recent_rewards = self.reward_log[-self.report_interval :]
             self.logger.describe("reward", recent_rewards, episode=episode)
 
 
@@ -211,15 +215,13 @@ def main(play):
         agent.play(env)
     else:
         trained = trainer.train(env, episode_count=1500, render=True)
-        trainer.logger.plot("Rewards", trainer.reward_log,
-                            trainer.report_interval)
+        trainer.logger.plot("Rewards", trainer.reward_log, trainer.report_interval)
         trained.save(path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PG Agent Pendulum-v0")
-    parser.add_argument("--play", action="store_true",
-                        help="play with trained model")
+    parser.add_argument("--play", action="store_true", help="play with trained model")
 
     args = parser.parse_args()
     main(args.play)

@@ -1,5 +1,4 @@
-class Planner():
-
+class Planner:
     def __init__(self, env):
         self.env = env
         self.log = []
@@ -30,7 +29,6 @@ class Planner():
 
 
 class ValueIterationPlanner(Planner):
-
     def __init__(self, env):
         super().__init__(env)
 
@@ -67,7 +65,6 @@ class ValueIterationPlanner(Planner):
 
 
 class PolicyIterationPlanner(Planner):
-
     def __init__(self, env):
         super().__init__(env)
         self.policy = {}
@@ -97,8 +94,7 @@ class PolicyIterationPlanner(Planner):
                     action_prob = self.policy[s][a]
                     r = 0
                     for prob, next_state, reward in self.transitions_at(s, a):
-                        r += action_prob * prob * \
-                             (reward + gamma * V[next_state])
+                        r += action_prob * prob * (reward + gamma * V[next_state])
                     expected_rewards.append(r)
                 max_reward = max(expected_rewards)
                 delta = max(delta, abs(max_reward - V[s]))

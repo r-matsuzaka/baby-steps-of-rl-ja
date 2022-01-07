@@ -1,10 +1,14 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import gym
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
 from gym.envs.registration import register
-register(id="FrozenLakeEasy-v0", entry_point="gym.envs.toy_text:FrozenLakeEnv",
-         kwargs={"is_slippery": False})
+
+register(
+    id="FrozenLakeEasy-v0",
+    entry_point="gym.envs.toy_text:FrozenLakeEnv",
+    kwargs={"is_slippery": False},
+)
 
 
 def show_q_value(Q):
@@ -48,8 +52,13 @@ def show_q_value(Q):
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    plt.imshow(reward_map, cmap=cm.RdYlGn, interpolation="bilinear",
-               vmax=abs(reward_map).max(), vmin=-abs(reward_map).max())
+    plt.imshow(
+        reward_map,
+        cmap=cm.RdYlGn,
+        interpolation="bilinear",
+        vmax=abs(reward_map).max(),
+        vmin=-abs(reward_map).max(),
+    )
     ax.set_xlim(-0.5, q_ncol - 0.5)
     ax.set_ylim(-0.5, q_nrow - 0.5)
     ax.set_xticks(np.arange(-0.5, q_ncol, state_size))

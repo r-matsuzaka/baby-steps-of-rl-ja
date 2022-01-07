@@ -1,11 +1,10 @@
-import numpy as np
 import gym
+import numpy as np
 from el_agent import ELAgent
 from frozen_lake_util import show_q_value
 
 
 class Actor(ELAgent):
-
     def __init__(self, env):
         super().__init__(epsilon=-1)
         nrow = env.observation_space.n
@@ -17,26 +16,30 @@ class Actor(ELAgent):
         return np.exp(x) / np.sum(np.exp(x), axis=0)
 
     def policy(self, s):
-        a = np.random.choice(self.actions, 1,
-                             p=self.softmax(self.Q[s]))
+        a = np.random.choice(self.actions, 1, p=self.softmax(self.Q[s]))
         return a[0]
 
 
-class Critic():
-
+class Critic:
     def __init__(self, env):
         states = env.observation_space.n
         self.V = np.zeros(states)
 
 
-class ActorCritic():
-
+class ActorCritic:
     def __init__(self, actor_class, critic_class):
         self.actor_class = actor_class
         self.critic_class = critic_class
 
-    def train(self, env, episode_count=1000, gamma=0.9,
-              learning_rate=0.1, render=False, report_interval=50):
+    def train(
+        self,
+        env,
+        episode_count=1000,
+        gamma=0.9,
+        learning_rate=0.1,
+        render=False,
+        report_interval=50,
+    ):
         actor = self.actor_class(env)
         critic = self.critic_class(env)
 
