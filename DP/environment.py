@@ -28,12 +28,11 @@ class State:
         """
         return State(self.row, self.column)
 
-    #
-    # def __hash__(self):
-    #     return hash((self.row, self.column))
+    def __hash__(self):
+        return hash((self.row, self.column))
 
-    # def __eq__(self, other):
-    #     return self.row == other.row and self.column == other.column
+    def __eq__(self, other):
+        return self.row == other.row and self.column == other.column
 
 
 class Action(Enum):
